@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using MaterialSkin;
 using Npgsql;
 using WarehouseManagement.Models;
 
@@ -110,23 +111,39 @@ namespace WarehouseManagement.Forms
             dgvPopularProducts.DataSource = popularProducts;
 
             // Настраиваем отображение столбцов
-            dgvPopularProducts.Columns["ProductID"].Visible = false;
-            dgvPopularProducts.Columns["CategoryID"].Visible = false;
-            dgvPopularProducts.Columns["Description"].Visible = false;
-            dgvPopularProducts.Columns["MinimumQuantity"].Visible = false;
-            dgvPopularProducts.Columns["ImagePath"].Visible = false;
-            dgvPopularProducts.Columns["SerialNumber"].Visible = false;
-            dgvPopularProducts.Columns["ExpiryDate"].Visible = false;
-            dgvPopularProducts.Columns["CreatedAt"].Visible = false;
-            dgvPopularProducts.Columns["UpdatedAt"].Visible = false;
-            dgvPopularProducts.Columns["Location"].Visible = false;
-            dgvPopularProducts.Columns["ReservedQuantity"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("ProductID"))
+                dgvPopularProducts.Columns["ProductID"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("CategoryID"))
+                dgvPopularProducts.Columns["CategoryID"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("Description"))
+                dgvPopularProducts.Columns["Description"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("MinimumQuantity"))
+                dgvPopularProducts.Columns["MinimumQuantity"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("ImagePath"))
+                dgvPopularProducts.Columns["ImagePath"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("SerialNumber"))
+                dgvPopularProducts.Columns["SerialNumber"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("ExpiryDate"))
+                dgvPopularProducts.Columns["ExpiryDate"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("CreatedAt"))
+                dgvPopularProducts.Columns["CreatedAt"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("UpdatedAt"))
+                dgvPopularProducts.Columns["UpdatedAt"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("Location"))
+                dgvPopularProducts.Columns["Location"].Visible = false;
+            if (dgvPopularProducts.Columns.Contains("ReservedQuantity"))
+                dgvPopularProducts.Columns["ReservedQuantity"].Visible = false;
 
-            dgvPopularProducts.Columns["Name"].HeaderText = "Наименование";
-            dgvPopularProducts.Columns["CategoryName"].HeaderText = "Категория";
-            dgvPopularProducts.Columns["Price"].HeaderText = "Цена";
-            dgvPopularProducts.Columns["Quantity"].HeaderText = "Количество";
-            dgvPopularProducts.Columns["AvailableQuantity"].HeaderText = "Доступно";
+            if (dgvPopularProducts.Columns.Contains("Name"))
+                dgvPopularProducts.Columns["Name"].HeaderText = "Наименование";
+            if (dgvPopularProducts.Columns.Contains("CategoryName"))
+                dgvPopularProducts.Columns["CategoryName"].HeaderText = "Категория";
+            if (dgvPopularProducts.Columns.Contains("Price"))
+                dgvPopularProducts.Columns["Price"].HeaderText = "Цена";
+            if (dgvPopularProducts.Columns.Contains("Quantity"))
+                dgvPopularProducts.Columns["Quantity"].HeaderText = "Количество";
+            if (dgvPopularProducts.Columns.Contains("AvailableQuantity"))
+                dgvPopularProducts.Columns["AvailableQuantity"].HeaderText = "Доступно";
         }
 
         // Загрузка графика стоимости запасов по категориям
@@ -223,6 +240,9 @@ namespace WarehouseManagement.Forms
         // Загрузка анализа ABC (для классификации товаров по уровню спроса)
         private void LoadABCAnalysis()
         {
+            // Отключаем событие форматирования, если оно было ранее присоединено
+            dgvAbcAnalysis.CellFormatting -= AbcAnalysis_CellFormatting;
+
             string query = @"
                 WITH ProductSales AS (
                     SELECT 
@@ -235,15 +255,30 @@ namespace WarehouseManagement.Forms
                     WHERE o.OrderDate >= @StartDate OR o.OrderDate IS NULL
                     GROUP BY p.ProductID, p.Name
                 ),
+                TotalSum AS (
+                    SELECT SUM(TotalSales) AS GrandTotal FROM ProductSales
+                ),
+                SalesWithPercentage AS (
+                    SELECT 
+                        p.ProductID,
+                        p.Name,
+                        p.TotalSales,
+                        CASE 
+                            WHEN t.GrandTotal = 0 OR t.GrandTotal IS NULL THEN 0
+                            ELSE 100 * p.TotalSales / t.GrandTotal 
+                        END AS SalesPercentage
+                    FROM 
+                        ProductSales p CROSS JOIN TotalSum t
+                ),
                 SalesRanked AS (
                     SELECT 
                         ProductID,
                         Name,
                         TotalSales,
-                        100 * TotalSales / NULLIF(SUM(TotalSales) OVER(), 0) AS SalesPercentage,
-                        SUM(100 * TotalSales / NULLIF(SUM(TotalSales) OVER(), 0)) OVER(ORDER BY TotalSales DESC) AS CumulativePercentage
-                    FROM ProductSales
-                    ORDER BY TotalSales DESC
+                        SalesPercentage,
+                        SUM(SalesPercentage) OVER(ORDER BY TotalSales DESC) AS CumulativePercentage
+                    FROM 
+                        SalesWithPercentage
                 )
                 SELECT 
                     ProductID,
@@ -252,9 +287,9 @@ namespace WarehouseManagement.Forms
                     SalesPercentage,
                     CumulativePercentage,
                     CASE 
-                        WHEN CumulativePercentage <= 80 THEN 'A'
-                        WHEN CumulativePercentage <= 95 THEN 'B'
-                        ELSE 'C'
+                        WHEN CumulativePercentage <= 80 THEN 'A'::text
+                        WHEN CumulativePercentage <= 95 THEN 'B'::text
+                        ELSE 'C'::text
                     END AS ABCClass
                 FROM SalesRanked";
 
@@ -280,13 +315,17 @@ namespace WarehouseManagement.Forms
             series.IsValueShownAsLabel = true;
             series.LabelFormat = "{0:P1}";
 
-            // Группируем данные по классам ABC
+            // Группируем данные по классам ABC 
             var abcGroups = dataTable.AsEnumerable()
-                .GroupBy(row => row.Field<string>("ABCClass"))
-                .Select(g => new {
+                .Where(row => row["ABCClass"] != DBNull.Value)
+                .GroupBy(row => row["ABCClass"].ToString())  // Явно преобразуем к строке
+                .Select(g => new
+                {
                     Class = g.Key,
                     Count = g.Count(),
-                    SalesPercentage = g.Sum(row => Convert.ToDouble(row["SalesPercentage"]))
+                    SalesPercentage = g.Sum(row =>
+                        row["SalesPercentage"] != DBNull.Value ?
+                        Convert.ToDouble(row["SalesPercentage"]) : 0)
                 })
                 .OrderBy(g => g.Class)
                 .ToList();
@@ -294,19 +333,17 @@ namespace WarehouseManagement.Forms
             // Добавляем данные и настраиваем цвета
             foreach (var group in abcGroups)
             {
-                var point = series.Points.AddXY($"Класс {group.Class} ({group.Count} тов.)", group.SalesPercentage / 100);
-
-                switch (group.Class)
+                if (!string.IsNullOrEmpty(group.Class))
                 {
-                    case "A":
-                        point.Color = Color.Green;
-                        break;
-                    case "B":
-                        point.Color = Color.Orange;
-                        break;
-                    case "C":
-                        point.Color = Color.Red;
-                        break;
+                    var point = series.Points.AddXY($"Класс {group.Class} ({group.Count} тов.)", group.SalesPercentage / 100);
+
+                    // Используем if-else вместо switch для более надежной обработки типов
+                    if (group.Class == "A")
+                        series.Points[point].Color = Color.Green;
+                    else if (group.Class == "B")
+                        series.Points[point].Color = Color.Orange;
+                    else if (group.Class == "C")
+                        series.Points[point].Color = Color.Red;
                 }
             }
 
@@ -318,33 +355,58 @@ namespace WarehouseManagement.Forms
             dgvAbcAnalysis.DataSource = dataTable;
 
             // Настраиваем отображение столбцов
-            dgvAbcAnalysis.Columns["ProductID"].Visible = false;
-            dgvAbcAnalysis.Columns["CumulativePercentage"].Visible = false;
+            if (dgvAbcAnalysis.Columns.Contains("ProductID"))
+                dgvAbcAnalysis.Columns["ProductID"].Visible = false;
 
-            dgvAbcAnalysis.Columns["Name"].HeaderText = "Наименование";
-            dgvAbcAnalysis.Columns["TotalSales"].HeaderText = "Общие продажи";
-            dgvAbcAnalysis.Columns["SalesPercentage"].HeaderText = "% от продаж";
-            dgvAbcAnalysis.Columns["ABCClass"].HeaderText = "Класс ABC";
+            if (dgvAbcAnalysis.Columns.Contains("CumulativePercentage"))
+                dgvAbcAnalysis.Columns["CumulativePercentage"].Visible = false;
 
-            // Форматирование ячеек
-            dgvAbcAnalysis.Columns["TotalSales"].DefaultCellStyle.Format = "C";
-            dgvAbcAnalysis.Columns["SalesPercentage"].DefaultCellStyle.Format = "P2";
+            if (dgvAbcAnalysis.Columns.Contains("Name"))
+                dgvAbcAnalysis.Columns["Name"].HeaderText = "Наименование";
 
-            foreach (DataGridViewRow row in dgvAbcAnalysis.Rows)
+            if (dgvAbcAnalysis.Columns.Contains("TotalSales"))
             {
-                string abcClass = row.Cells["ABCClass"].Value.ToString();
+                dgvAbcAnalysis.Columns["TotalSales"].HeaderText = "Общие продажи";
+                dgvAbcAnalysis.Columns["TotalSales"].DefaultCellStyle.Format = "C";
+            }
 
-                switch (abcClass)
+            if (dgvAbcAnalysis.Columns.Contains("SalesPercentage"))
+            {
+                dgvAbcAnalysis.Columns["SalesPercentage"].HeaderText = "% от продаж";
+                dgvAbcAnalysis.Columns["SalesPercentage"].DefaultCellStyle.Format = "P2";
+            }
+
+            if (dgvAbcAnalysis.Columns.Contains("ABCClass"))
+                dgvAbcAnalysis.Columns["ABCClass"].HeaderText = "Класс ABC";
+
+            // Подписываемся на событие форматирования ячеек
+            dgvAbcAnalysis.CellFormatting += AbcAnalysis_CellFormatting;
+        }
+
+        // Обработчик события форматирования ячеек для ABC-анализа
+        private void AbcAnalysis_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
+        {
+            // Применяем форматирование только к колонке ABCClass
+            if (dgvAbcAnalysis.Columns.Count > e.ColumnIndex &&
+                dgvAbcAnalysis.Columns[e.ColumnIndex].Name == "ABCClass" &&
+                e.RowIndex >= 0 &&
+                e.RowIndex < dgvAbcAnalysis.Rows.Count)
+            {
+                // Получаем значение ячейки
+                object cellValue = dgvAbcAnalysis.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
+
+                // Проверяем, что значение не null
+                if (cellValue != null && cellValue != DBNull.Value)
                 {
-                    case "A":
-                        row.Cells["ABCClass"].Style.BackColor = Color.LightGreen;
-                        break;
-                    case "B":
-                        row.Cells["ABCClass"].Style.BackColor = Color.LightYellow;
-                        break;
-                    case "C":
-                        row.Cells["ABCClass"].Style.BackColor = Color.LightPink;
-                        break;
+                    string abcClass = cellValue.ToString().Trim();
+
+                    // Применяем цвет в зависимости от класса ABC
+                    if (abcClass == "A")
+                        e.CellStyle.BackColor = Color.LightGreen;
+                    else if (abcClass == "B")
+                        e.CellStyle.BackColor = Color.LightYellow;
+                    else if (abcClass == "C")
+                        e.CellStyle.BackColor = Color.LightPink;
                 }
             }
         }

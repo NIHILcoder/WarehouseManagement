@@ -8,11 +8,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace WarehouseManagement
+namespace WarehouseManagement.Forms
 {
-    public partial class Form1: Form
+    public partial class SuppliesForm: Form
     {
-        public Form1()
+        public SuppliesForm()
         {
             InitializeComponent();
         }

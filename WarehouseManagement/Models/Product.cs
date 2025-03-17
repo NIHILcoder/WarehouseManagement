@@ -140,7 +140,7 @@ namespace WarehouseManagement.Models
                         NpgsqlParameter[] productParameters = {
                             new NpgsqlParameter("@Name", Name),
                             new NpgsqlParameter("@Description", (object)Description ?? DBNull.Value),
-                            new NpgsqlParameter("@CategoryID", (object)CategoryID == 0 ? DBNull.Value : CategoryID),
+                            new NpgsqlParameter("@CategoryID", CategoryID == 0 ? DBNull.Value : (object)CategoryID),
                             new NpgsqlParameter("@Price", Price),
                             new NpgsqlParameter("@MinimumQuantity", MinimumQuantity),
                             new NpgsqlParameter("@ImagePath", (object)ImagePath ?? DBNull.Value),
@@ -213,7 +213,7 @@ namespace WarehouseManagement.Models
                             new NpgsqlParameter("@ProductID", ProductID),
                             new NpgsqlParameter("@Name", Name),
                             new NpgsqlParameter("@Description", (object)Description ?? DBNull.Value),
-                            new NpgsqlParameter("@CategoryID", (object)CategoryID == 0 ? DBNull.Value : CategoryID),
+                            new NpgsqlParameter("@CategoryID", CategoryID == 0 ? DBNull.Value : (object)CategoryID),
                             new NpgsqlParameter("@Price", Price),
                             new NpgsqlParameter("@MinimumQuantity", MinimumQuantity),
                             new NpgsqlParameter("@ImagePath", (object)ImagePath ?? DBNull.Value),
@@ -299,7 +299,8 @@ namespace WarehouseManagement.Models
                 var dataTable = Utils.DatabaseHelper.ExecuteQuery(checkQuery, checkParameters);
 
                 // Если товар используется, возвращаем false
-                if (Convert.ToInt32(dataTable.Rows[0][0]) > 0 || Convert.ToInt32(dataTable.Rows[1][0]) > 0)
+                if (dataTable.Rows.Count >= 2 &&
+                    (Convert.ToInt32(dataTable.Rows[0][0]) > 0 || Convert.ToInt32(dataTable.Rows[1][0]) > 0))
                 {
                     return false;
                 }
