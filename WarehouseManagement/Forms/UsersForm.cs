@@ -56,7 +56,11 @@ namespace WarehouseManagement.Forms
                 MessageBox.Show($"Ошибка при загрузке пользователей: {ex.Message}", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            // Проверяйте количество элементов перед установкой значения
+            if (cmbRole.Items.Count > 0)
+                cmbRole.SelectedIndex = 0; 
         }
+        
 
         // Обновление списка пользователей в ListView
         private void RefreshUsersList()

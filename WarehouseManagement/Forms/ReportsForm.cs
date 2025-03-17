@@ -155,15 +155,15 @@ namespace WarehouseManagement.Forms
         {
             string query = @"
                 SELECT 
-                    p.Name AS 'Наименование',
-                    c.Name AS 'Категория',
-                    i.Quantity AS 'Количество',
-                    i.ReservedQuantity AS 'Резерв',
-                    (i.Quantity - i.ReservedQuantity) AS 'Доступно',
-                    p.Price AS 'Цена',
-                    (i.Quantity * p.Price) AS 'Стоимость',
-                    CASE WHEN i.Quantity <= p.MinimumQuantity THEN 'Да' ELSE 'Нет' END AS 'Низкий_запас',
-                    i.Location AS 'Расположение'
+                    p.Name AS ""Наименование"",
+                    c.Name AS ""Категория"",
+                    i.Quantity AS ""Количество"",
+                    i.ReservedQuantity AS ""Резерв"",
+                    (i.Quantity - i.ReservedQuantity) AS ""Доступно"",
+                    p.Price AS ""Цена"",
+                    (i.Quantity * p.Price) AS ""Стоимость"",
+                    CASE WHEN i.Quantity <= p.MinimumQuantity THEN 'Да' ELSE 'Нет' END AS ""Низкий_запас"",
+                    i.Location AS ""Расположение""
                 FROM Products p
                 LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
                 JOIN Inventory i ON p.ProductID = i.ProductID
@@ -181,12 +181,12 @@ namespace WarehouseManagement.Forms
         {
             string query = @"
                 SELECT 
-                    o.OrderNumber AS 'Номер',
-                    o.OrderDate AS 'Дата',
-                    c.Name AS 'Клиент',
-                    o.TotalAmount AS 'Сумма',
-                    o.Status AS 'Статус',
-                    u.FullName AS 'Менеджер'
+                    o.OrderNumber AS ""Номер"",
+                    o.OrderDate AS ""Дата"",
+                    c.Name AS ""Клиент"",
+                    o.TotalAmount AS ""Сумма"",
+                    o.Status AS ""Статус"",
+                    u.FullName AS ""Менеджер""
                 FROM Orders o
                 JOIN Customers c ON o.CustomerID = c.CustomerID
                 JOIN Users u ON o.UserID = u.UserID
@@ -210,12 +210,12 @@ namespace WarehouseManagement.Forms
         {
             string query = @"
                 SELECT 
-                    s.InvoiceNumber AS 'Номер',
-                    s.SupplyDate AS 'Дата',
-                    sup.Name AS 'Поставщик',
-                    s.TotalAmount AS 'Сумма',
-                    s.Status AS 'Статус',
-                    u.FullName AS 'Принял'
+                    s.InvoiceNumber AS ""Номер"",
+                    s.SupplyDate AS ""Дата"",
+                    sup.Name AS ""Поставщик"",
+                    s.TotalAmount AS ""Сумма"",
+                    s.Status AS ""Статус"",
+                    u.FullName AS ""Принял""
                 FROM Supplies s
                 JOIN Suppliers sup ON s.SupplierID = sup.SupplierID
                 JOIN Users u ON s.UserID = u.UserID
@@ -239,20 +239,20 @@ namespace WarehouseManagement.Forms
         {
             string query = @"
                 SELECT 
-                    p.Name AS 'Наименование',
-                    c.Name AS 'Категория',
-                    COALESCE(SUM(od.Quantity), 0) AS 'Количество_продаж',
-                    COALESCE(COUNT(DISTINCT o.OrderID), 0) AS 'Количество_заказов',
-                    p.Price AS 'Цена',
-                    COALESCE(SUM(od.Quantity * od.UnitPrice), 0) AS 'Сумма_продаж',
-                    i.Quantity AS 'Остаток'
+                    p.Name AS ""Наименование"",
+                    c.Name AS ""Категория"",
+                    COALESCE(SUM(od.Quantity), 0) AS ""Количество_продаж"",
+                    COALESCE(COUNT(DISTINCT o.OrderID), 0) AS ""Количество_заказов"",
+                    p.Price AS ""Цена"",
+                    COALESCE(SUM(od.Quantity * od.UnitPrice), 0) AS ""Сумма_продаж"",
+                    i.Quantity AS ""Остаток""
                 FROM Products p
                 LEFT JOIN OrderDetails od ON p.ProductID = od.ProductID
                 LEFT JOIN Orders o ON od.OrderID = o.OrderID AND o.OrderDate BETWEEN @StartDate AND @EndDate
                 LEFT JOIN Categories c ON p.CategoryID = c.CategoryID
                 LEFT JOIN Inventory i ON p.ProductID = i.ProductID
                 GROUP BY p.ProductID, p.Name, c.Name, p.Price, i.Quantity
-                ORDER BY 'Количество_продаж' DESC NULLS LAST
+                ORDER BY ""Количество_продаж"" DESC NULLS LAST
                 LIMIT 50";
 
             NpgsqlParameter[] parameters = {
@@ -295,16 +295,16 @@ namespace WarehouseManagement.Forms
                     ORDER BY TotalSales DESC
                 )
                 SELECT 
-                    Name AS 'Наименование',
-                    Category AS 'Категория',
-                    TotalSales AS 'Продажи',
-                    SalesPercentage AS 'Процент',
-                    CumulativePercentage AS 'Накопительный_процент',
+                    Name AS ""Наименование"",
+                    Category AS ""Категория"",
+                    TotalSales AS ""Продажи"",
+                    SalesPercentage AS ""Процент"",
+                    CumulativePercentage AS ""Накопительный_процент"",
                     CASE 
                         WHEN CumulativePercentage <= 80 THEN 'A'
                         WHEN CumulativePercentage <= 95 THEN 'B'
                         ELSE 'C'
-                    END AS 'ABC_класс'
+                    END AS ""ABC_класс""
                 FROM SalesRanked
                 ORDER BY TotalSales DESC";
 
